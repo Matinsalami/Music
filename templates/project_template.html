@@ -110,6 +110,7 @@
                 <input type="file" id="uploadVideo" name="videoFile" oninput="fileInput()"/>
                 <button id="uploadBut" onclick="uploadVideo()" >Upload</button>
                 <p id="uploadStatus" style="margin-top: 10px; font-style: normal"></p>
+               
             </div>
 
             <div class="form-group">
@@ -311,6 +312,7 @@
                 document.getElementById("uploadBut").style.backgroundColor = uBBC
                 document.getElementById("uploadBut").style.cursor = UBCursor
             }
+
             if (sessionStorage.getItem("uploaded") == "true") {
                 buttonFileStyler(false, "pointer", "#007bff", true, true, "grey", "default")
             }
@@ -324,17 +326,20 @@
                 formData.append("file", selectedFile); // 'file' is the name the server will use to access the file, use the formData as the body
                 // fill me
                 const request = new XMLHttpRequest()
-                request.open("POST", "/post")
-                request.send(formData)
+
+                request.open("POST", "/post/")
+                request.upload.addEventListener("loadstart", (e)=> {
+                    buttonFileStyler(true, "default", "grey", true,  true, "grey", "default")
+                })
+                request.upload.addEventListener("progress", (e)=> {
+                    const percentComp = (e.loaded / e.total) * 100;
+                    document.getElementById("uploadStatus").innerText = Math.floor(percentComp) + "%"
+                })
                 request.onreadystatechange = function() {
-                    res = request.getResponseHeader("res")
-                    if (request.readyState == XMLHttpRequest.DONE && res == "You've already uploaded a file!") {
-                        buttonFileStyler(false, "pointer", "#007bff", true, true, "grey", "default")
-                    } else {
-                        sessionStorage.setItem("uploaded", "true")
-                        buttonFileStyler(false, "pointer", "#007bff", true, true, "grey", "default")
-                    }
+                    sessionStorage.setItem("uploaded", "true")
+                    buttonFileStyler(false, "pointer", "#007bff", true,  true, "grey", "default")
                 }
+                request.send(formData)
                 
             };
 
