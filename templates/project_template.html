@@ -107,14 +107,14 @@
             <div class="form-group">
                 <h2>Upload Video</h2>
                 <label for="uploadVideo">Choose a video file:</label>
-                <input type="file" id="uploadVideo" name="videoFile" />
+                <input type="file" id="uploadVideo" name="videoFile" oninput="fileInput()"/>
                 <button id="uploadBut" onclick="uploadVideo()" >Upload</button>
                 <p id="uploadStatus" style="margin-top: 10px; font-style: normal"></p>
             </div>
 
             <div class="form-group">
                 <h2>Delete Video</h2>
-                <button onclick="deleteVideo()">Delete</button>
+                <button id="deleteBut" onclick="deleteVideo()" style="background-color: grey;" disabled>Delete</button>
                 <p id="deleteStatus" style="margin-top: 10px; font-style: normal"></p>
             </div>
 
@@ -298,30 +298,56 @@
              * each property has a name and a value
              *
              * */
+            const fileInput = async () => {
+                document.getElementById("uploadStatus").textContent = ""
+            }
+
+            function buttonFileStyler(dDis, dCursor, dBC, uBD, uVD, uBBC, UBCursor) {
+                document.getElementById("deleteBut").disabled = dDis
+                document.getElementById("deleteBut").style.cursor = dCursor
+                document.getElementById("deleteBut").style.backgroundColor = dBC
+                document.getElementById("uploadBut").disabled = uBD
+                document.getElementById("uploadVideo").disabled = uVD
+                document.getElementById("uploadBut").style.backgroundColor = uBBC
+                document.getElementById("uploadBut").style.cursor = UBCursor
+            }
+            if (sessionStorage.getItem("uploaded") == "true") {
+                buttonFileStyler(false, "pointer", "#007bff", true, true, "grey", "default")
+            }
             const uploadVideo = async () => {
                 const selectedFile = document.getElementById("uploadVideo").files[0]; // retrieves the chosen file
-                console.log(selectedFile)
+                if (!selectedFile) {
+                    document.getElementById("uploadStatus").textContent = "Please choose a file!"
+                    return 
+                } 
                 const formData = new FormData();
                 formData.append("file", selectedFile); // 'file' is the name the server will use to access the file, use the formData as the body
                 // fill me
-                // console.log(formData.get("file"))
-                await fetch("/post", {
-                    method: "POST",
-                    body: formData
-                }).then(res=> { 
-                    if (res.headers.get("res") == "You've already uploaded a file!") {
-                        document.getElementById("uploadBut").disabled = true
-                        document.getElementById("uploadBut").style.backgroundColor = "grey"
-                        document.getElementById("uploadBut").style.cursor = "default"
+                const request = new XMLHttpRequest()
+                request.open("POST", "/post")
+                request.send(formData)
+                request.onreadystatechange = function() {
+                    res = request.getResponseHeader("res")
+                    if (request.readyState == XMLHttpRequest.DONE && res == "You've already uploaded a file!") {
+                        buttonFileStyler(false, "pointer", "#007bff", true, true, "grey", "default")
+                    } else {
+                        sessionStorage.setItem("uploaded", "true")
+                        buttonFileStyler(false, "pointer", "#007bff", true, true, "grey", "default")
                     }
-                })
+                }
                 
-                console.error("Unimplemented method uploadVideo");
             };
 
-            const deleteVideo = async () => {
-                // fill me
-                console.error("Unimplemented method deleteVideo");
+            const deleteVideo = async () => { 
+                // document.getElementById("deleteBut").disabled = true
+                
+                await fetch("/delete", {
+                    method: "DELETE", 
+                }).then(e=> {
+                        sessionStorage.getItem("uploaded", "false")
+                        buttonFileStyler(true, "default", "grey", false, false, "#007bff", "pointer")
+                })
+                
             };
             const configureFilters = async () => {
                 // use the variable filterList

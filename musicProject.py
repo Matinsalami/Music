@@ -22,3 +22,14 @@ def uploadedVideo():
 
 
 
+@app.route("/delete/", methods=["DELETE"])
+def deletedVideo():
+    global _UPLOADED_
+    if _UPLOADED_ == 1:
+        _UPLOADED_ = 0
+        mr = make_response(render_template("project_template.html"), 204)
+        mr.headers["res"] = "file deleted!"
+        return mr
+
+
+
