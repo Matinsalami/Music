@@ -345,7 +345,7 @@
 
             const deleteVideo = async () => { 
                 // document.getElementById("deleteBut").disabled = true
-                
+                document.getElementById("uploadVideo").value = null
                 await fetch("/delete", {
                     method: "DELETE", 
                 }).then(e=> {
