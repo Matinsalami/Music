@@ -346,10 +346,11 @@
             const deleteVideo = async () => { 
                 // document.getElementById("deleteBut").disabled = true
                 document.getElementById("uploadVideo").value = null
-                await fetch("/delete", {
+                document.getElementById("uploadStatus").innerText = null
+                await fetch("/delete/", {
                     method: "DELETE", 
                 }).then(e=> {
-                        sessionStorage.getItem("uploaded", "false")
+                        sessionStorage.setItem("uploaded", "false")
                         buttonFileStyler(true, "default", "grey", false, false, "#007bff", "pointer")
                 })
                 
