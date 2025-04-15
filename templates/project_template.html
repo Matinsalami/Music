@@ -230,7 +230,7 @@
                 }
             };
 
-            const getProp = (prop_name) => ({ name: prop_name, value: document.getElementById("frameInterpolateTargetFps").value });
+            const getProp = (prop_name) => ({ name: prop_name, value: document.getElementById(prop_name).value });
             const clean = () => {
                 filterList = [];
                 refreshFiltersList();
