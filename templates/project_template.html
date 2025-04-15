@@ -239,8 +239,8 @@
                 const videoFilterSelect = document.getElementById("videoFilter");
                 const selectedVideoFilter = videoFilterSelect.value;
                 const filterConfig = { name: selectedVideoFilter, props: [] };
-                if (selectedVideoFilter === "frameinterpolate") {
-                    getProp("frameInterpolateTargetFps");
+                if (selectedVideoFilter === "frameInterpolate") {
+                    filterConfig.props.push(getProp("frameInterpolateTargetFps"));
                 } else if (selectedVideoFilter === "upscale") {
                     filterConfig.props.push(getProp("upscaleTargetWidth"), getProp("upscaleTargetHeight"));
                 }
@@ -252,8 +252,8 @@
                 const selectedAudioFilter = audioFilterSelect.value;
                 const filterConfig = { name: selectedAudioFilter, props: [] };
                 if (selectedAudioFilter === "gainCompressor") {
-                    filterConfig.props.push(getProp("compressorThreshold"), getProp("limiterThreshold"));
-                } else if (selectedAudioFilter === "voice_enhancement") {
+                    filterConfig.props.push(getProp("gainCompressorThreshold"), getProp("limiterThreshold"));
+                } else if (selectedAudioFilter === "voiceEnhancement") {
                     filterConfig.props.push(getProp("preemphasisAlpha"), getProp("highPassFilter"));
                 } else if (selectedAudioFilter === "denoiseDelay") {
                     filterConfig.props.push(getProp("noisePower"), getProp("delay"), getProp("delayGain"));
