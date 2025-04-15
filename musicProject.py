@@ -1,7 +1,7 @@
 from flask import Flask, request, render_template, make_response
 import os
-
-
+import threading
+from helpers import fileSaver
 app = Flask(__name__)
 _UPLOADED_ = 0
 _FILE_NAME_ = ""
@@ -19,7 +19,7 @@ def uploadedVideo():
         mr.headers["res"] = "You've already uploaded a file!"
         return mr
     else:
-        request.files["file"].save(request.files["file"].filename)
+        threading.Thread(target=fileSaver, args=(request.files["file"], )).start()
         _UPLOADED_ = 1
         _FILE_NAME_ = request.files["file"].filename
     return render_template("project_template.html")
