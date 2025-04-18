@@ -197,7 +197,7 @@
                     <button onclick="addVideoFilter()">Add</button>
                 </div>
                 <button onclick="configureFilters()">Configure Filters</button>
-                <button onclick="applyFilters()">Apply Filters</button>
+                <button onclick="applyFilters()" id="applyButton">Apply Filters</button>
                 <button onclick="stream()">Play</button>
                 <div id="videoContainer" style="display: none">
                     <video controls width="640" height="360">
@@ -234,7 +234,7 @@
             const clean = async () => {
                 filterList = [];
                 refreshFiltersList();
-                await configureFilters();  
+                await configureFilters();  // covers edgecase of user cleaning but not configuring again! 
             };
             const addVideoFilter = () => {
                 const videoFilterSelect = document.getElementById("videoFilter");
@@ -324,8 +324,8 @@
                     return 
                 } 
                 const formData = new FormData();
-                formData.append("file", selectedFile); // 'file' is the name the server will use to access the file, use the formData as the body
-                // fill me
+                formData.append("file", selectedFile); // 'file' is the name the server will use to access the file, 
+                // use the formData as the body
                 const request = new XMLHttpRequest()
 
                 request.open("POST", "/post/")
@@ -366,9 +366,22 @@
                     
                 })
             };
+            
             const applyFilters = async () => {
-                // fill me
-                console.error("Unimplemented method applyFilters")
+                await fetch("/applyfilter/", {
+                    method: "GET",
+                }).then(e => {
+                    if (e.status == 403) {
+
+                        document.getElementById("applyButton").innerText = "Could not be done!"
+                        document.getElementById("applyButton").style = "background-color: red"
+                        setTimeout(()=> {
+                            document.getElementById("applyButton").innerText = "Apply filter"
+                            document.getElementById("applyButton").style = "background-color: #007bff"
+                        }, 3000)
+                    }
+                })
+                // console.error("Unimplemented method applyFilters")
             }
             const stream = async () => {
                 //fill me

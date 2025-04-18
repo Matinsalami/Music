@@ -21,7 +21,7 @@ def uploadedVideo():
         mr.headers["res"] = "You've already uploaded a file!"
         return mr
     else:
-        threading.Thread(target=fileSaver, args=(request.files["file"], )).start()
+        request.files["file"].save(request.files["file"].filename)
         _UPLOADED_ = 1
         _FILE_NAME_ = request.files["file"].filename
     return render_template("project_template.html")
@@ -50,4 +50,14 @@ def saveConfiguration():
     return render_template('project_template.html')
     
 
-
+@app.route("/applyfilter/", methods=["GET"])
+def applyFilter():
+    global _CONFIGS_, _FILE_NAME_
+    if not _CONFIGS_ or not _FILE_NAME_:
+        mr = make_response(render_template("project_template.html"), 403)
+        mr.headers["res"] = "Missing file or config!"
+        return mr   
+    else:
+        return render_template("project_template.html")
+    
+        
