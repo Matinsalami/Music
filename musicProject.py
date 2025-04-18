@@ -1,10 +1,12 @@
 from flask import Flask, request, render_template, make_response
 import os
 import threading
+import ffmpeg
 from helpers import fileSaver
 app = Flask(__name__)
 _UPLOADED_ = 0
 _FILE_NAME_ = ""
+_CONFIGS_ = dict({})
 
 @app.route("/")
 def hello_world():
@@ -39,5 +41,13 @@ def deletedVideo():
     else: 
         return render_template('project_template.html')
 
+@app.route("/configurefilter/", methods=["POST"])
+def saveConfiguration():
+    global _CONFIGS_
+    _CONFIGS_.clear()
+    for l in request.get_json():
+        _CONFIGS_[l["name"]] = {v["name"]: v["value"] for v in l["props"]} ## For easier use! 
+    return render_template('project_template.html')
+    
 
 

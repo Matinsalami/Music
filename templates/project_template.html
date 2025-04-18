@@ -231,9 +231,10 @@
             };
 
             const getProp = (prop_name) => ({ name: prop_name, value: document.getElementById(prop_name).value });
-            const clean = () => {
+            const clean = async () => {
                 filterList = [];
                 refreshFiltersList();
+                await configureFilters();  
             };
             const addVideoFilter = () => {
                 const videoFilterSelect = document.getElementById("videoFilter");
@@ -356,9 +357,14 @@
                 
             };
             const configureFilters = async () => {
-                // use the variable filterList
-                // fill me
-                console.error("Unimplemented method configureFilters");
+                await fetch("/configurefilter/", {
+                    headers: {
+                        "Content-Type": "application/json" 
+                    },
+                    method: "POST",
+                    body: JSON.stringify(filterList),
+                    
+                })
             };
             const applyFilters = async () => {
                 // fill me
