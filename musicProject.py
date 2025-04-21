@@ -1,8 +1,8 @@
-from flask import Flask, request, render_template, make_response
+from flask import Flask, request, render_template, make_response, send_from_directory
 import os
 import threading
-import ffmpeg
-from helpers import fileSaver
+
+from helpers import upscaler, makePhoneLike
 app = Flask(__name__)
 _UPLOADED_ = 0
 _FILE_NAME_ = ""
@@ -58,6 +58,16 @@ def applyFilter():
         mr.headers["res"] = "Missing file or config!"
         return mr   
     else:
+        for k,v in _CONFIGS_.items():
+            if k == "phone":
+                makePhoneLike(int(v["phoneFilterOrder"]), int(v["phoneSideGain"]), _FILE_NAME_)
+            if k == "upscale":
+                print("hi")
+                upscaler(int(v["upscaleTargetWidth"]), int(v["upscaleTargetHeight"]), _FILE_NAME_)
         return render_template("project_template.html")
     
+@app.route("/stream/", methods=["GET"])
+def stream():
+    return send_from_directory("./",
+                               f"result.mp4", as_attachment=True)  
         

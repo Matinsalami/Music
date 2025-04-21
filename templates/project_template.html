@@ -202,7 +202,7 @@
                 <div id="videoContainer" style="display: none">
                     <video controls width="640" height="360">
                         <!-- fill with the correct URL and the correct format (e.g. mp4/webm)-->
-                        <source src="YOUR_VIDEO_SOURCE" type="video/YOUR_FORMAT" />
+                        <source src="/stream/" type="video/mp4" />
                         Your browser does not support HTML5 video.
                     </video>
                 </div>
@@ -385,7 +385,10 @@
             }
             const stream = async () => {
                 //fill me
-                console.error("Unimplemented method stream");
+                await fetch("/stream/", {
+                    method: "GET",
+                })
+                
             };
         </script>
     </body>
