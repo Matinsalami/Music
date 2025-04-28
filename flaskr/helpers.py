@@ -40,3 +40,71 @@ def makePhoneLike(filterOrder, sideGain, filename):
 
     # ot = ffmpeg.output(prob, au, "video.mp4")
     return 
+
+def denoise_and_delay(filename, noise_power_db, delay_ms, delay_gain_percent):
+    
+    global _AUDIO_FILE_
+    vid = ffmpeg.input(filename).video
+    au = ffmpeg.input(filename).audio
+    info = ffmpeg.probe(filename, cmd="ffprobe")
+    
+    noChannels = info["streams"][1]["channels"] 
+    audioStream = au.output(_AUDIO_FILE_, ac=noChannels).overwrite_output().run()
+    
+    sample_rate, samples_original = wav.read(_AUDIO_FILE_)
+    
+    filter_order = 4
+    low_cutoff = 300
+    high_cutoff = 3400
+    
+    noise_factor = 10 ** (noise_power_db / 20)
+    
+    b, a = butter(filter_order, [low_cutoff, high_cutoff], btype='bandpass', fs=sample_rate)
+    
+    
+    if len(samples_original.shape) > 1:  # For stereo audio
+        denoised_audio = np.zeros_like(samples_original)
+        for channel in range(samples_original.shape[1]):
+            denoised_audio[:, channel] = lfilter(b, a, samples_original[:, channel])
+    else:  # For mono audio
+        denoised_audio = lfilter(b, a, samples_original)
+    
+    # reducing noise
+    denoised_audio = denoised_audio * noise_factor
+    
+    
+    delay_samples = int((delay_ms / 1000) * sample_rate)
+    delay_gain = delay_gain_percent / 100
+    
+    
+    if len(denoised_audio.shape) > 1:  # For stereo audio
+        delayed_audio = np.zeros_like(denoised_audio)
+        for channel in range(denoised_audio.shape[1]):
+            delayed_channel = np.zeros_like(denoised_audio[:, channel])
+            delayed_channel[delay_samples:] = denoised_audio[:-delay_samples, channel] if delay_samples < len(denoised_audio) else 0
+            #scale the delayed audio        
+            delayed_channel = delayed_channel * delay_gain
+            # Mix with the original
+            delayed_audio[:, channel] = denoised_audio[:, channel] + delayed_channel
+    else:  # For mono audio
+        delayed_audio = np.zeros_like(denoised_audio)
+        delayed_audio[delay_samples:] = denoised_audio[:-delay_samples] if delay_samples < len(denoised_audio) else 0
+        delayed_audio = delayed_audio * delay_gain
+        delayed_audio = denoised_audio + delayed_audio
+    
+    # Normalize to prevent clipping
+    max_val = np.max(np.abs(delayed_audio))
+    if max_val > 32767:  # Max value for 16-bit audio
+        delayed_audio = delayed_audio * (32767 / max_val)
+    
+    # Convert back to int16 for saving
+    delayed_audio = np.asarray(delayed_audio, dtype=np.int16)
+    
+    # Save the processed audio
+    wav.write(_AUDIO_FILE_, sample_rate, delayed_audio)
+    
+    # Combine processed audio with the original video
+    auInpF = ffmpeg.input(_AUDIO_FILE_)
+    ffmpeg.output(vid, auInpF, UPLOAD_FOLDER).overwrite_output().run()
+    
+    return
