@@ -5,23 +5,24 @@ import numpy as np
 import os
 _AUDIO_FILE_ = "audio.wav"
 APP_ROOT = os.path.dirname(os.path.abspath(__file__))
-UPLOAD_FOLDER = os.path.join(APP_ROOT, 'static', "result.mp4")
+# UPLOAD_FOLDER = os.path.join(APP_ROOT, 'static', "result.mp4")
 
 
-def upscaler(tw, th, filename):
-    stream = ffmpeg.input(filename).video
+def upscaler(tw, th, readFrom, writeTo):
+    stream = ffmpeg.input(readFrom).video
     vid = stream.filter("scale", w=tw, h=th) 
-    auInpf = ffmpeg.input(filename).audio
-    ffmpeg.output(vid, auInpf, UPLOAD_FOLDER).overwrite_output().run()
+    auInpf = ffmpeg.input(readFrom).audio
+    ffmpeg.output(vid, auInpf, writeTo).overwrite_output().run()
+    if ("temp" in readFrom): os.remove(readFrom)
     return 
 
 
 
-def makePhoneLike(filterOrder, sideGain, filename):
+def makePhoneLike(filterOrder, sideGain, readFrom, writeTo):
     global _AUDIO_FILE_
-    vid = ffmpeg.input(filename).video
-    au = ffmpeg.input(filename).audio
-    info = ffmpeg.probe(filename, cmd="ffprobe") # metadata of the file! 
+    vid = ffmpeg.input(readFrom).video
+    au = ffmpeg.input(readFrom).audio
+    info = ffmpeg.probe(readFrom, cmd="ffprobe") # metadata of the file! 
     noChannels = info["streams"][1]["channels"] # extract number of channels from original file
     audioStream = au.output(_AUDIO_FILE_, ac=(noChannels if sideGain else 1)).overwrite_output().run()
     sample_rate, samples_original = wav.read(_AUDIO_FILE_)
@@ -30,17 +31,17 @@ def makePhoneLike(filterOrder, sideGain, filename):
     data2 = np.asarray(ot, dtype=np.int16) 
     wav.write(_AUDIO_FILE_, sample_rate, data2)
     auInpF = ffmpeg.input(_AUDIO_FILE_)
-    ffmpeg.output(vid, auInpF, UPLOAD_FOLDER).overwrite_output().run()
-
+    ffmpeg.output(vid, auInpF, writeTo).overwrite_output().run()
+    if ("temp" in readFrom): os.remove(readFrom)
     # ot = ffmpeg.output(prob, au, "video.mp4")
     return 
 
-def denoise_and_delay(filename, noise_power_db, delay_ms, delay_gain_percent):
+def denoise_and_delay(readFrom, writeTo, noise_power_db, delay_ms, delay_gain_percent):
     
     global _AUDIO_FILE_
-    vid = ffmpeg.input(filename).video
-    au = ffmpeg.input(filename).audio
-    info = ffmpeg.probe(filename, cmd="ffprobe")
+    vid = ffmpeg.input(readFrom).video
+    au = ffmpeg.input(readFrom).audio
+    info = ffmpeg.probe(readFrom, cmd="ffprobe")
     
     noChannels = info["streams"][1]["channels"] 
     audioStream = au.output(_AUDIO_FILE_, ac=noChannels).overwrite_output().run()
@@ -99,6 +100,6 @@ def denoise_and_delay(filename, noise_power_db, delay_ms, delay_gain_percent):
     
     # Combine processed audio with the original video
     auInpF = ffmpeg.input(_AUDIO_FILE_)
-    ffmpeg.output(vid, auInpF, UPLOAD_FOLDER).overwrite_output().run()
+    ffmpeg.output(vid, auInpF, writeTo).overwrite_output().run()
     
     return

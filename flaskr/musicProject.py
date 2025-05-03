@@ -6,7 +6,7 @@ from helpers import upscaler, makePhoneLike , denoise_and_delay
 app = Flask(__name__, static_folder="static",instance_relative_config=True)
 _UPLOADED_ = 0
 _FILE_NAME_ = ""
-_CONFIGS_ = dict({})
+_CONFIGS_ = []
 
 APP_ROOT = os.path.dirname(os.path.abspath(__file__))
 UPLOAD_FOLDER = os.path.join(APP_ROOT, "static")
@@ -49,7 +49,7 @@ def saveConfiguration():
     global _CONFIGS_
     _CONFIGS_.clear()
     for l in request.get_json():
-        _CONFIGS_[l["name"]] = {v["name"]: v["value"] for v in l["props"]} ## For easier use! 
+        _CONFIGS_.append([l["name"], {v["name"]: v["value"] for v in l["props"]}]) ## For easier use!
     return render_template('project_template.html')
     
 
@@ -61,16 +61,21 @@ def applyFilter():
         mr.headers["res"] = "Missing file or config!"
         return mr   
     else:
-        for k,v in _CONFIGS_.items():
-            applyToResults = os.path.isfile(UPLOAD_FOLDER + f"\\result.{_FILE_NAME_.split('.')[-1]}")
-            if applyToResults:
-                _FILE_NAME_ = UPLOAD_FOLDER + f"\\temp.{_FILE_NAME_.split('.')[-1]}"
+        configSize = len(_CONFIGS_)
+        # print(_CONFIGS_.items())
+        for (i, (k, v)) in enumerate(_CONFIGS_):
+            prevFileName = _FILE_NAME_
+            if i == (configSize - 1):
+                _FILE_NAME_ = UPLOAD_FOLDER + f"\\result.{_FILE_NAME_.split('.')[-1]}"
+            else:
+                _FILE_NAME_ = UPLOAD_FOLDER + f"\\temp{i}.{_FILE_NAME_.split('.')[-1]}"
+
             if k == "phone":
-                makePhoneLike(int(v["phoneFilterOrder"]), int(v["phoneSideGain"]), _FILE_NAME_)
-            # elif k == "upscale":
-            #     upscaler(int(v["upscaleTargetWidth"]), int(v["upscaleTargetHeight"]), _FILE_NAME_)
-            # elif k == "denoiseDelay":
-            #     denoise_and_delay(_FILE_NAME_ , int (v["noisePower"]) , int(v["delay"]) , int(v["delayGain"]) )
+                makePhoneLike(int(v["phoneFilterOrder"]), int(v["phoneSideGain"]), prevFileName, _FILE_NAME_)
+            elif k == "upscale":
+                upscaler(int(v["upscaleTargetWidth"]), int(v["upscaleTargetHeight"]), prevFileName, _FILE_NAME_)
+            elif k == "denoiseDelay":
+                denoise_and_delay(_FILE_NAME_ , int (v["noisePower"]) , int(v["delay"]) , int(v["delayGain"]) )
         return render_template("project_template.html")
     
 @app.route("/stream/", methods=["GET"])
