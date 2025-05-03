@@ -13,7 +13,6 @@ def upscaler(tw, th, readFrom, writeTo):
     vid = stream.filter("scale", w=tw, h=th) 
     auInpf = ffmpeg.input(readFrom).audio
     ffmpeg.output(vid, auInpf, writeTo).overwrite_output().run()
-    if ("temp" in readFrom): os.remove(readFrom)
     return 
 
 
@@ -32,7 +31,6 @@ def makePhoneLike(filterOrder, sideGain, readFrom, writeTo):
     wav.write(_AUDIO_FILE_, sample_rate, data2)
     auInpF = ffmpeg.input(_AUDIO_FILE_)
     ffmpeg.output(vid, auInpF, writeTo).overwrite_output().run()
-    if ("temp" in readFrom): os.remove(readFrom)
     # ot = ffmpeg.output(prob, au, "video.mp4")
     return 
 

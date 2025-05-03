@@ -62,24 +62,23 @@ def applyFilter():
         return mr   
     else:
         configSize = len(_CONFIGS_)
-        # print(_CONFIGS_.items())
         for (i, (k, v)) in enumerate(_CONFIGS_):
             prevFileName = _FILE_NAME_
             if i == (configSize - 1):
                 _FILE_NAME_ = UPLOAD_FOLDER + f"\\result.{_FILE_NAME_.split('.')[-1]}"
             else:
                 _FILE_NAME_ = UPLOAD_FOLDER + f"\\temp{i}.{_FILE_NAME_.split('.')[-1]}"
-
             if k == "phone":
                 makePhoneLike(int(v["phoneFilterOrder"]), int(v["phoneSideGain"]), prevFileName, _FILE_NAME_)
             elif k == "upscale":
                 upscaler(int(v["upscaleTargetWidth"]), int(v["upscaleTargetHeight"]), prevFileName, _FILE_NAME_)
             elif k == "denoiseDelay":
                 denoise_and_delay(_FILE_NAME_ , int (v["noisePower"]) , int(v["delay"]) , int(v["delayGain"]) )
+            os.remove(prevFileName)
         return render_template("project_template.html")
     
 @app.route("/stream/", methods=["GET"])
 def stream():
     return send_from_directory(UPLOAD_FOLDER,
-                               "result.mp4", as_attachment=True)  
+                               f"result.{_FILE_NAME_.split('.')[-1]}", as_attachment=True)  
         
