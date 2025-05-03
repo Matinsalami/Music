@@ -1,6 +1,6 @@
 from flask import Flask, request, render_template, make_response, send_from_directory
 import os
-import threading
+
 
 from helpers import upscaler, makePhoneLike , denoise_and_delay
 app = Flask(__name__, static_folder="static",instance_relative_config=True)
@@ -62,13 +62,15 @@ def applyFilter():
         return mr   
     else:
         for k,v in _CONFIGS_.items():
-            print (k)
+            applyToResults = os.path.isfile(UPLOAD_FOLDER + f"\\result.{_FILE_NAME_.split('.')[-1]}")
+            if applyToResults:
+                _FILE_NAME_ = UPLOAD_FOLDER + f"\\temp.{_FILE_NAME_.split('.')[-1]}"
             if k == "phone":
                 makePhoneLike(int(v["phoneFilterOrder"]), int(v["phoneSideGain"]), _FILE_NAME_)
-            if k == "upscale":
-                upscaler(int(v["upscaleTargetWidth"]), int(v["upscaleTargetHeight"]), _FILE_NAME_)
-            if k == "denoiseDelay":
-                denoise_and_delay(_FILE_NAME_ , int (v["noisePower"]) , int(v["delay"]) , int(v["delayGain"]) )
+            # elif k == "upscale":
+            #     upscaler(int(v["upscaleTargetWidth"]), int(v["upscaleTargetHeight"]), _FILE_NAME_)
+            # elif k == "denoiseDelay":
+            #     denoise_and_delay(_FILE_NAME_ , int (v["noisePower"]) , int(v["delay"]) , int(v["delayGain"]) )
         return render_template("project_template.html")
     
 @app.route("/stream/", methods=["GET"])

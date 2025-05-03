@@ -7,15 +7,12 @@ _AUDIO_FILE_ = "audio.wav"
 APP_ROOT = os.path.dirname(os.path.abspath(__file__))
 UPLOAD_FOLDER = os.path.join(APP_ROOT, 'static', "result.mp4")
 
-def fileSaver(fileObj):
-    fileObj.save(fileObj.filename)
-    return 
 
 def upscaler(tw, th, filename):
-    stream = ffmpeg.input(filename)
-    stream = stream.filter("scale", w=tw, h=th) 
-    stream = stream.output(f'processedFile.{filename.split(".")[1]}')
-    stream.run()
+    stream = ffmpeg.input(filename).video
+    vid = stream.filter("scale", w=tw, h=th) 
+    auInpf = ffmpeg.input(filename).audio
+    ffmpeg.output(vid, auInpf, UPLOAD_FOLDER).overwrite_output().run()
     return 
 
 
@@ -27,15 +24,12 @@ def makePhoneLike(filterOrder, sideGain, filename):
     info = ffmpeg.probe(filename, cmd="ffprobe") # metadata of the file! 
     noChannels = info["streams"][1]["channels"] # extract number of channels from original file
     audioStream = au.output(_AUDIO_FILE_, ac=(noChannels if sideGain else 1)).overwrite_output().run()
-
     sample_rate, samples_original = wav.read(_AUDIO_FILE_)
-    num, denom = butter(filterOrder,  [800, 12000] , "bandpass", fs=sample_rate)
+    num, denom = butter(filterOrder,  [800, 3400] , "bandpass", fs=sample_rate) 
     ot = lfilter(num, denom, samples_original)
     data2 = np.asarray(ot, dtype=np.int16) 
     wav.write(_AUDIO_FILE_, sample_rate, data2)
-
     auInpF = ffmpeg.input(_AUDIO_FILE_)
-
     ffmpeg.output(vid, auInpF, UPLOAD_FOLDER).overwrite_output().run()
 
     # ot = ffmpeg.output(prob, au, "video.mp4")
