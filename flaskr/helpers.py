@@ -1,8 +1,12 @@
 import ffmpeg
 from scipy.signal import butter, lfilter
 import scipy.io.wavfile as wav
+
+
 import numpy as np
+# from pydub import AudioSegment
 import os
+import cv2
 _AUDIO_FILE_ = "audio.wav"
 APP_ROOT = os.path.dirname(os.path.abspath(__file__))
 # UPLOAD_FOLDER = os.path.join(APP_ROOT, 'static', "result.mp4")
@@ -101,3 +105,112 @@ def denoise_and_delay(readFrom, writeTo, noise_power_db, delay_ms, delay_gain_pe
     ffmpeg.output(vid, auInpF, writeTo).overwrite_output().run()
     
     return
+
+
+
+
+
+
+
+
+
+
+
+def voiceEnhancement(preEmphasisAlpha, filterOrder, readFrom, writeTo):
+ 
+    global _AUDIO_FILE_
+    
+    # Split video and audio
+    vid = ffmpeg.input(readFrom).video
+    au = ffmpeg.input(readFrom).audio
+    
+    # Extract audio to temporary file
+    (
+        ffmpeg
+        .input(readFrom)
+        .audio
+        .output(_AUDIO_FILE_, acodec='pcm_s16le')
+        .overwrite_output()
+        .run(quiet=True)
+    )
+    
+    # Read the audio file
+    sample_rate, samples_original = wav.read(_AUDIO_FILE_)
+    
+    # Convert to mono if needed
+    if len(samples_original.shape) > 1:
+        samples_original = np.mean(samples_original, axis=1).astype(np.int16)
+    
+    # Apply pre-emphasis filter: y[n] = x[n] - α*x[n-1]
+    alpha = min(max(float(preEmphasisAlpha) / 10, 0), 0.95)
+    emphasized_samples = np.zeros_like(samples_original)
+    emphasized_samples[0] = samples_original[0]
+    emphasized_samples[1:] = samples_original[1:] - alpha * samples_original[:-1]
+    
+    # Apply band-pass filter (Butterworth)
+    safe_filter_order = min(max(int(filterOrder), 1), 4)
+    num, denom = butter(safe_filter_order, [800, 6000], "bandpass", fs=sample_rate)
+    filtered_samples = lfilter(num, denom, emphasized_samples)
+    
+    # Normalize audio to avoid distortion
+    if np.max(np.abs(filtered_samples)) > 0:
+        filtered_samples = filtered_samples * (32767 / np.max(np.abs(filtered_samples)) * 0.9)
+    
+    # Convert to proper format
+    enhanced_audio = np.asarray(filtered_samples, dtype=np.int16)
+    
+    # Write processed audio to temporary file
+    wav.write(_AUDIO_FILE_, sample_rate, enhanced_audio)
+    
+    # Merge video with enhanced audio
+    (
+        ffmpeg
+        .output(
+            vid, 
+            ffmpeg.input(_AUDIO_FILE_), 
+            writeTo,
+            vcodec='copy'  # Copy video to avoid re-encoding
+        )
+        .overwrite_output()
+        .run()
+    )
+    
+    # Clean up temporary file
+    if os.path.exists(_AUDIO_FILE_):
+        os.remove(_AUDIO_FILE_)
+    
+    return
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+def colorInvert(readFrom, writeTo):
+    input_video = ffmpeg.input(readFrom) # Get input streams
+    inverted_video = input_video.video.filter('negate')  # Apply color inversion filter (negate) to the video stream 
+    audio = input_video.audio    # Keep the original audio
+    # Combine the inverted video with the original audio
+    output = ffmpeg.output( 
+        inverted_video, 
+        audio, 
+        writeTo,
+        acodec='copy'  # Copy audio to avoid re-encoding
+    )
+    # Run the ffmpeg command
+    out, err = output.overwrite_output().run(capture_stdout=True, capture_stderr=True)
+    print("FFmpeg stdout:", out)
+    print("FFmpeg stderr:", err)
+
+    return
+
+

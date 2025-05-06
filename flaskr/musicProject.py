@@ -2,7 +2,7 @@ from flask import Flask, request, render_template, make_response, send_from_dire
 import os
 
 
-from helpers import upscaler, makePhoneLike , denoise_and_delay
+from helpers import upscaler, makePhoneLike , denoise_and_delay, voiceEnhancement, colorInvert
 app = Flask(__name__, static_folder="static",instance_relative_config=True)
 _UPLOADED_ = 0
 _FILE_NAME_ = ""
@@ -27,6 +27,7 @@ def uploadedVideo():
         request.files["file"].save(request.files["file"].filename)
         _UPLOADED_ = 1
         _FILE_NAME_ = request.files["file"].filename
+        print(f"File uploaded: {_FILE_NAME_}")#
     return render_template("project_template.html")
 
 
@@ -65,16 +66,23 @@ def applyFilter():
         for (i, (k, v)) in enumerate(_CONFIGS_):
             prevFileName = _FILE_NAME_
             if i == (configSize - 1):
-                _FILE_NAME_ = UPLOAD_FOLDER + f"\\result.{_FILE_NAME_.split('.')[-1]}"
+                _FILE_NAME_ = os.path.join(UPLOAD_FOLDER, f"result.{_FILE_NAME_.split('.')[-1]}")
             else:
-                _FILE_NAME_ = UPLOAD_FOLDER + f"\\temp{i}.{_FILE_NAME_.split('.')[-1]}"
+                _FILE_NAME_ = os.path.join(UPLOAD_FOLDER, f"temp{i}.{_FILE_NAME_.split('.')[-1]}")
             if k == "phone":
                 makePhoneLike(int(v["phoneFilterOrder"]), int(v["phoneSideGain"]), prevFileName, _FILE_NAME_)
             elif k == "upscale":
                 upscaler(int(v["upscaleTargetWidth"]), int(v["upscaleTargetHeight"]), prevFileName, _FILE_NAME_)
             elif k == "denoiseDelay":
                 denoise_and_delay(_FILE_NAME_ , int (v["noisePower"]) , int(v["delay"]) , int(v["delayGain"]) )
+
+            elif k == "voiceEnhancement":
+                voiceEnhancement(int(v["preemphasisAlpha"]), int(v["highPassFilter"]), prevFileName, _FILE_NAME_)
+            elif k == "colorinvert":
+                colorInvert(prevFileName, _FILE_NAME_)
             os.remove(prevFileName)
+
+
         return render_template("project_template.html")
     
 @app.route("/stream/", methods=["GET"])
