@@ -200,9 +200,9 @@
                 <button onclick="applyFilters()" id="applyButton">Apply Filters</button>
                 <button onclick="stream()">Play</button>
                 <div id="videoContainer" style="display: none">
-                    <video width="640" height="360" controls>
+                    <video width="640" height="360" id="vidElement" controls>
                         <!-- fill with the correct URL and the correct format (e.g. mp4/webm)-->
-                        <source src="{{ url_for('static', filename='result.mp4') }}" type="video/mp4" />
+                        <source id="sourceEle" src="{{ url_for('static', filename='result.mp4') }}" type="video/mp4" />
                         
                     </video>
                 </div>
@@ -327,7 +327,10 @@
                 formData.append("file", selectedFile); // 'file' is the name the server will use to access the file, 
                 // use the formData as the body
                 const request = new XMLHttpRequest()
-
+                const fileAddress = document.getElementById("sourceEle").src.split(/\.(?=[a-zA-Z0-9]+$)/)
+                
+                document.getElementById("sourceEle").src = fileAddress[0] + "." + selectedFile["name"].split(".")[1] 
+                document.getElementById("sourceEle").type = `video/${selectedFile["name"].split(".")[1]}`
                 request.open("POST", "/post/")
                 request.upload.addEventListener("loadstart", (e)=> {
                     buttonFileStyler(true, "default", "grey", true,  true, "grey", "default")
@@ -390,7 +393,8 @@
                     method: "GET",
                 }).then(e=> {
                     document.getElementById("videoContainer").style = "display: block"
-                    
+                    document.getElementById("vidElement").load()
+                    document.getElementById("vidElement").play()
                 });
                 
             };
