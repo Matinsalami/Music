@@ -9,7 +9,7 @@ import os
 import cv2
 _AUDIO_FILE_ = "audio.wav"
 APP_ROOT = os.path.dirname(os.path.abspath(__file__))
-# UPLOAD_FOLDER = os.path.join(APP_ROOT, 'static', "result.mp4")
+#UPLOAD_FOLDER = os.path.join(APP_ROOT, 'static', "result.mp4")
 
 
 def upscaler(tw, th, readFrom, writeTo):
@@ -109,6 +109,33 @@ def denoise_and_delay(readFrom, writeTo, noise_power_db, delay_ms, delay_gain_pe
 
 
 
+def applyGainCompression(threshold_db, limiter_db, readFrom, writeTo):
+    
+    stream = ffmpeg.input(readFrom)
+    
+    # Handle threshold parameter (ensure it's negative)
+    abs_threshold = abs(threshold_db) if threshold_db < 0 else threshold_db
+    threshold_point = f"-{abs_threshold}/-{abs_threshold}"
+    
+    # Handle limiter parameter
+    mid_point = f"-{abs_threshold/2}/-{abs_threshold+limiter_db/2}"
+    limiter_point = f"0/-{limiter_db}"
+    
+    # Combine points to create the compression curve
+    points = f"{threshold_point}|{mid_point}|{limiter_point}"
+    
+    # Apply compression filter using 'compand'
+    compressed_audio = stream.audio.filter(
+        'compand',
+        attacks='0.01',
+        decays='0.5',
+        points=points,
+        gain='0'
+    )
+    
+    # Combine original video with compressed audio
+    result = ffmpeg.output(stream.video, compressed_audio, writeTo).overwrite_output().run()
+
 
 
 
@@ -184,14 +211,17 @@ def voiceEnhancement(preEmphasisAlpha, filterOrder, readFrom, writeTo):
 
 
 
+def applyGrayscale(readFrom, writeTo):
+    # Load video input
+    stream = ffmpeg.input(readFrom)
 
+    # Apply grayscale filter using 'format=gray'
+    gray_stream = stream.video.filter("format", "gray")
 
-
-
-
-
-
-
+    # Combine grayscale video with original audio
+    result = ffmpeg.output(gray_stream,stream.audio, writeTo).overwrite_output().run()
+    
+    return
 
 
 
@@ -212,5 +242,4 @@ def colorInvert(readFrom, writeTo):
     print("FFmpeg stderr:", err)
 
     return
-
 
