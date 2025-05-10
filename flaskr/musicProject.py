@@ -1,6 +1,6 @@
 from flask import Flask, request, render_template, make_response, send_from_directory
 import os
-from helpers import upscaler, makePhoneLike , denoise_and_delay, applyGainCompression, applyGrayscale, colorInvert, voiceEhancement
+from helpers import upscaler, makePhoneLike , denoise_and_delay, applyGainCompression, applyGrayscale, colorInvert, voiceEnhancement
 
 app = Flask(__name__, static_folder="static",instance_relative_config=True)
 _UPLOADED_ = 0
@@ -69,7 +69,7 @@ def applyFilter():
             else:
                 _FILE_NAME_ = os.path.join(UPLOAD_FOLDER, f"temp{i}.{_FILE_NAME_.split('.')[-1]}")
             if k == "phone":
-                makePhoneLike(int(v["phoneFilterOrder"]), int(v["phoneSideGain"]), prevFileName, _FILE_NAME_)
+                makePhoneLike(int(v["phoneFilterOrder"]), float(v["phoneSideGain"]), prevFileName, _FILE_NAME_)
             elif k == "upscale":
                 upscaler(int(v["upscaleTargetWidth"]), int(v["upscaleTargetHeight"]), prevFileName, _FILE_NAME_)
             elif k == "denoiseDelay":

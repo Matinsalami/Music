@@ -6,7 +6,6 @@ import scipy.io.wavfile as wav
 import numpy as np
 # from pydub import AudioSegment
 import os
-import cv2
 _AUDIO_FILE_ = "audio.wav"
 APP_ROOT = os.path.dirname(os.path.abspath(__file__))
 #UPLOAD_FOLDER = os.path.join(APP_ROOT, 'static', "result.mp4")
@@ -24,10 +23,12 @@ def upscaler(tw, th, readFrom, writeTo):
 def makePhoneLike(filterOrder, sideGain, readFrom, writeTo):
     global _AUDIO_FILE_
     vid = ffmpeg.input(readFrom).video
-    au = ffmpeg.input(readFrom).audio
-    info = ffmpeg.probe(readFrom, cmd="ffprobe") # metadata of the file! 
-    noChannels = info["streams"][1]["channels"] # extract number of channels from original file
-    audioStream = au.output(_AUDIO_FILE_, ac=(noChannels if sideGain else 1)).overwrite_output().run()
+    
+    if os.path.exists(_AUDIO_FILE_):
+        os.remove(_AUDIO_FILE_)
+
+    os.system(f'ffmpeg -i {readFrom} -af "pan=2c|c0={sideGain}*c0|c1={1-sideGain}*c1" {_AUDIO_FILE_}')
+    
     sample_rate, samples_original = wav.read(_AUDIO_FILE_)
     num, denom = butter(filterOrder,  [800, 3400] , "bandpass", fs=sample_rate) 
     ot = lfilter(num, denom, samples_original)
@@ -158,7 +159,7 @@ def voiceEnhancement(preEmphasisAlpha, filterOrder, readFrom, writeTo):
         .audio
         .output(_AUDIO_FILE_, acodec='pcm_s16le')
         .overwrite_output()
-        .run(quiet=True)
+        .run()
     )
     
     # Read the audio file
